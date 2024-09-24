@@ -4,7 +4,7 @@ import os
 s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
-    bucket_name = 'advent-of-code-day1'
+    bucket_name = 'advent-of-code-day1 '
     input_key = 'input.txt'
     output_key = 'output.txt'
     
