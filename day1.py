@@ -12,7 +12,7 @@ def lambda_handler(event, context):
     s3.download_file(bucket_name, input_key, '/tmp/input.txt')
     
     total = []
-    test = []
+
 
     with open('/tmp/input.txt', 'r') as file: #opens the file
         for line in file: #for each line in the file
@@ -21,6 +21,8 @@ def lambda_handler(event, context):
             last_digit = digits[-1]
             number = int(first_digit + last_digit) #concatenates the first and last digit
             total.append(number) #appends to total list
+
+    print(sum(total))
     
     # Write the result to a new file
     with open('/tmp/output.txt', 'w') as file:
