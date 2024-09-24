@@ -22,12 +22,12 @@ def lambda_handler(event, context):
             number = int(first_digit + last_digit) #concatenates the first and last digit
             total.append(number) #appends to total list
 
-    print(sum(total))
+    total_sum = sum(total) # calculate the sum of all numbers in the list
+    print(total_sum)
     
     # Write the result to a new file
     with open('/tmp/output.txt', 'w') as file:
-        for number in total:
-            file.write(f"{number}\n")
+        file.write(f"{total_sum}\n") # write the sum to the file
     
     # Upload the new file to S3
     s3.upload_file('/tmp/output.txt', bucket_name, output_key)
