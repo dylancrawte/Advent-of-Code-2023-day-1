@@ -49,26 +49,21 @@ def lambda_handler(event, context):
         # Write the result directly to S3
         logger.info(f"Attempting to write output to {output_key} in {bucket_name}")
         try:
-            s3.put_object(Bucket=bucket_name, Key=output_key, Body=str(total_sum))
+            response = s3.put_object(Bucket=bucket_name, Key=output_key, Body=str(total_sum))
+            logger.info(f"Put object response: {response}")
+            if response['ResponseMetadata']['HTTPStatusCode'] != 200:
+                raise Exception(f"Failed to upload file. Response: {response}")
             logger.info(f"Successfully wrote {output_key} to {bucket_name}")
-        except ClientError as e:
+        except Exception as e:
             logger.error(f"Failed to write {output_key}: {str(e)}")
             raise
 
-        # Verify the file was uploaded
-        try:
-            s3.head_object(Bucket=bucket_name, Key=output_key)
-            logger.info(f"Verified {output_key} exists in {bucket_name}")
-        except ClientError as e:
-            logger.error(f"Failed to verify {output_key} in {bucket_name}: {str(e)}")
-            raise
-        
         return {
             'statusCode': 200,
             'body': 'File processed and result uploaded successfully'
         }
     except Exception as e:
-        logger.error(f"An error occurred: {str(e)}")
+        logger.error(f"An error occurred: {str(e)}", exc_info=True)
         return {
             'statusCode': 500,
             'body': f'An error occurred: {str(e)}'
