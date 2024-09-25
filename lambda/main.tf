@@ -33,7 +33,6 @@ resource "aws_lambda_function" "my_lambda" {
   handler       = "day1.lambda_handler"  
   runtime       = "python3.8"
   filename      = "day1.zip"
-
   source_code_hash = filebase64sha256("day1.zip")
 }
 
