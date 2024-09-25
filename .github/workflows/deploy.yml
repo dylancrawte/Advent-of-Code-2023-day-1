@@ -55,22 +55,47 @@ jobs:
         AWS_DEFAULT_REGION: 'eu-north-1'  # or your desired region
       run: python upload_to_s3.py input.small.txt advent-of-code-day
 
-    - name: Update IAM role trust relationship
+    - name: Create or update IAM role
       run: |
-        aws iam update-assume-role-policy \
-          --role-name lambda-execution-role \
-          --policy-document '{
-            "Version": "2012-10-17",
-            "Statement": [
-              {
-                "Effect": "Allow",
-                "Principal": {
-                  "Service": "lambda.amazonaws.com"
-                },
-                "Action": "sts:AssumeRole"
-              }
-            ]
-          }'
+        # Check if the IAM role exists
+        if ! aws iam get-role --role-name lambda-execution-role 2>/dev/null; then
+          # Create the IAM role if it doesn't exist
+          aws iam create-role \
+            --role-name lambda-execution-role \
+            --assume-role-policy-document '{
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  },
+                  "Action": "sts:AssumeRole"
+                }
+              ]
+            }'
+          
+          # Attach basic Lambda execution policy
+          aws iam attach-role-policy \
+            --role-name lambda-execution-role \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        else
+          # Update the trust relationship if the role exists
+          aws iam update-assume-role-policy \
+            --role-name lambda-execution-role \
+            --policy-document '{
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Principal": {
+                    "Service": "lambda.amazonaws.com"
+                  },
+                  "Action": "sts:AssumeRole"
+                }
+              ]
+            }'
+        fi
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -79,7 +104,7 @@ jobs:
     - name: Create or update Lambda function
       run: |
         # Check if the Lambda function exists
-        if aws lambda get-function --function-name advent-of-code-2023 2>&1 | grep -q "ResourceNotFoundException"; then
+        if ! aws lambda get-function --function-name advent-of-code-2023 2>/dev/null; then
           # Create the Lambda function if it doesn't exist
           aws lambda create-function \
             --function-name advent-of-code-2023 \
