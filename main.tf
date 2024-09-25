@@ -33,8 +33,8 @@ resource "aws_lambda_function" "my_lambda" {
   role          = aws_iam_role.lambda_exec_role.arn
   handler       = "day1.lambda_handler"  
   runtime       = "python3.8"
-  filename      = "day1.py"
-  source_code_hash = filebase64sha256("day1.py")
+  filename      = "day1.zip"
+  source_code_hash = filebase64sha256("day1.zip")
 }
 
 output "s3_bucket_name" {
