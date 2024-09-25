@@ -45,9 +45,6 @@ output "lambda_function_name" {
   value = aws_lambda_function.my_lambda.function_name
 }
 
-#construct athena instance
-#construct actual database and table inside athena
-this is an obvious change
 
 // Add this new resource
 resource "aws_iam_role_policy" "lambda_s3_policy" {
