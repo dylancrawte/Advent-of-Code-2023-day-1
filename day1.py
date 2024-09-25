@@ -32,17 +32,13 @@ def lambda_handler(event, context):
         total_sum = sum(total)
         logger.info(f"Calculated sum: {total_sum}")
         
-        # Write the result to a new file
-        with open('/tmp/output.txt', 'w') as file:
-            file.write(f"{total_sum}\n")
-        
-        # Upload the new file to S3
-        logger.info(f"Attempting to upload output to {output_key} in {bucket_name}")
-        s3.upload_file('/tmp/output.txt', bucket_name, output_key)
+        # Write the result directly to S3
+        logger.info(f"Attempting to write output to {output_key} in {bucket_name}")
+        s3.put_object(Bucket=bucket_name, Key=output_key, Body=str(total_sum))
         
         return {
             'statusCode': 200,
-            'body': 'File processed and uploaded successfully'
+            'body': 'File processed and result uploaded successfully'
         }
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}")
