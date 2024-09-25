@@ -101,23 +101,22 @@ jobs:
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: 'eu-north-1'
 
-    - name: Create or update Lambda function
+    - name: Create Lambda function
       run: |
-        # Check if the Lambda function exists
-        if ! aws lambda get-function --function-name advent-of-code-2023 2>/dev/null; then
-          # Create the Lambda function if it doesn't exist
-          aws lambda create-function \
-            --function-name advent-of-code-2023 \
-            --runtime python3.8 \
-            --handler day1.lambda_handler \
-            --role arn:aws:iam::418272766593:role/lambda-execution-role \
-            --zip-file fileb://day1.zip
-        else
-          # Update the Lambda function if it exists
-          aws lambda update-function-code \
-            --function-name advent-of-code-2023 \
-            --zip-file fileb://day1.zip
-        fi
+        # Read the content of day1.py
+        LAMBDA_CODE=$(cat day1.py)
+        
+        # Create the Lambda function
+        aws lambda create-function \
+          --function-name advent-of-code-2023 \
+          --runtime python3.8 \
+          --handler day1.lambda_handler \
+          --role arn:aws:iam::418272766593:role/lambda-execution-role \
+          --code ZipFile="$LAMBDA_CODE"
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: 'eu-north-1'
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
