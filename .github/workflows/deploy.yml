@@ -55,90 +55,21 @@ jobs:
         AWS_DEFAULT_REGION: 'eu-north-1'  # or your desired region
       run: python upload_to_s3.py input.small.txt advent-of-code-day
 
-    - name: Create or update IAM role
+   
+    - name: Deploy to AWS Lambda
       run: |
-        # Check if the IAM role exists
-        if ! aws iam get-role --role-name lambda-execution-role 2>/dev/null; then
-          # Create the IAM role if it doesn't exist
-          aws iam create-role \
-            --role-name lambda-execution-role \
-            --assume-role-policy-document '{
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  },
-                  "Action": "sts:AssumeRole"
-                }
-              ]
-            }'
-          
-          # Attach basic Lambda execution policy
-          aws iam attach-role-policy \
-            --role-name lambda-execution-role \
-            --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        FUNCTION_NAME="advent-of-code-2023"
+        if aws lambda get-function --function-name $FUNCTION_NAME 2>&1 | grep -q "Function not found"; then
+          echo "Creating new Lambda function"
+          aws lambda create-function \
+            --function-name $FUNCTION_NAME \
+            --runtime python3.8 \
+            --role arn:aws:iam::418272766593:role/lambda-execution-role \
+            --handler day1.lambda_handler \
+            --zip-file fileb://function.zip
         else
-          # Update the trust relationship if the role exists
-          aws iam update-assume-role-policy \
-            --role-name lambda-execution-role \
-            --policy-document '{
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Effect": "Allow",
-                  "Principal": {
-                    "Service": "lambda.amazonaws.com"
-                  },
-                  "Action": "sts:AssumeRole"
-                }
-              ]
-            }'
+          echo "Updating existing Lambda function"
+          aws lambda update-function-code \
+            --function-name $FUNCTION_NAME \
+            --zip-file fileb://function.zip
         fi
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: 'eu-north-1'
-
-    - name: Create Lambda function
-      run: |
-        python - <<EOF
-        import boto3
-        import json
-        import os
-        
-         # Explicitly set the region
-        region = os.environ.get('AWS_REGION', 'eu-north-1')
-        lambda_client = boto3.client('lambda', region_name=region)
-        
-        with open('day1.py', 'rb') as f:
-            code_content = f.read()
-        
-        try:
-            response = lambda_client.create_function(
-                FunctionName='advent-of-code-2023',
-                Runtime='python3.8',
-                Role='arn:aws:iam::418272766593:role/lambda-execution-role',
-                Handler='day1.lambda_handler',
-                Code={'ZipFile': code_content},
-                Timeout=30,
-                MemorySize=128
-            )
-            print(f"Lambda function created successfully: {response['FunctionArn']}")
-        except lambda_client.exceptions.ResourceConflictException:
-            print("Function already exists. Updating code...")
-            response = lambda_client.update_function_code(
-                FunctionName='advent-of-code-2023',
-                ZipFile=code_content
-            )
-            print(f"Lambda function code updated successfully: {response['FunctionArn']}")
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
-            exit(1)
-        EOF
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: 'eu-north-1'
-
