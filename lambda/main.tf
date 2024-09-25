@@ -30,7 +30,7 @@ resource "aws_iam_role" "lambda_exec_role" {
 resource "aws_lambda_function" "my_lambda" {
   function_name = "advent-of-code-2023"
   role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "day1.lambda_handler"
+  handler       = "day1.lambda_handler"  
   runtime       = "python3.8"
   filename      = "day1.zip"
 
