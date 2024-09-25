@@ -66,10 +66,10 @@ jobs:
             --runtime python3.8 \
             --role arn:aws:iam::418272766593:role/lambda-execution-role \
             --handler day1.lambda_handler \
-            --zip-file fileb://function.zip
+            --zip-file fileb://day1.zip
         else
           echo "Updating existing Lambda function"
           aws lambda update-function-code \
             --function-name $FUNCTION_NAME \
-            --zip-file fileb://function.zip
+            --zip-file fileb://day1.zip
         fi
