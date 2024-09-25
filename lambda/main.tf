@@ -62,7 +62,8 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
         Action = [
           "s3:GetObject",
           "s3:ListBucket",
-          "s3:PutObject"
+          "s3:PutObject",
+          "s3:HeadObject"
         ]
         Resource = [
           "arn:aws:s3:::advent-of-code-day",
@@ -85,7 +86,7 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
         Action = [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket"w
         ]
         Resource = [
           "arn:aws:s3:::advent-of-code-day",
