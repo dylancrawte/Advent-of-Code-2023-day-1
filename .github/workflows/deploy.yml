@@ -21,6 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install boto3
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
@@ -47,8 +48,12 @@ jobs:
     - name: Zip Lambda function
       run: zip -j day1.zip day1.py  # Use -j to avoid directory structure in the zip
 
-    - name: Upload to S3
-      run: aws s3 cp input.small.txt s3://advent-of-code-day/
+    - name: Upload file to S3
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: 'eu-north-1'  # or your desired region
+      run: python upload_to_s3.py input.small.txt advent-of-code-day
 
     - name: Deploy Lambda function
       run: |
