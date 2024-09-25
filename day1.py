@@ -1,6 +1,7 @@
 import boto3
 import os
 import logging
+from botocore.exceptions import ClientError
 
 # Set up logging
 logger = logging.getLogger()
@@ -14,10 +15,23 @@ def lambda_handler(event, context):
     output_key = 'output.txt'
     
     try:
+        # Check if the bucket exists
+        try:
+            s3.head_bucket(Bucket=bucket_name)
+            logger.info(f"Bucket {bucket_name} exists and is accessible")
+        except ClientError as e:
+            logger.error(f"Bucket {bucket_name} is not accessible: {str(e)}")
+            raise
+
         # Download the file from S3
         logger.info(f"Attempting to download {input_key} from {bucket_name}")
-        s3.download_file(bucket_name, input_key, '/tmp/input.txt')
-        
+        try:
+            s3.download_file(bucket_name, input_key, '/tmp/input.txt')
+            logger.info(f"Successfully downloaded {input_key}")
+        except ClientError as e:
+            logger.error(f"Failed to download {input_key}: {str(e)}")
+            raise
+
         total = []
 
         with open('/tmp/input.txt', 'r') as file:
@@ -34,7 +48,20 @@ def lambda_handler(event, context):
         
         # Write the result directly to S3
         logger.info(f"Attempting to write output to {output_key} in {bucket_name}")
-        s3.put_object(Bucket=bucket_name, Key=output_key, Body=str(total_sum))
+        try:
+            s3.put_object(Bucket=bucket_name, Key=output_key, Body=str(total_sum))
+            logger.info(f"Successfully wrote {output_key} to {bucket_name}")
+        except ClientError as e:
+            logger.error(f"Failed to write {output_key}: {str(e)}")
+            raise
+
+        # Verify the file was uploaded
+        try:
+            s3.head_object(Bucket=bucket_name, Key=output_key)
+            logger.info(f"Verified {output_key} exists in {bucket_name}")
+        except ClientError as e:
+            logger.error(f"Failed to verify {output_key} in {bucket_name}: {str(e)}")
+            raise
         
         return {
             'statusCode': 200,
