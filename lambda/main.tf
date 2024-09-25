@@ -3,7 +3,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "my_bucket" {
-  bucket = "advent-of-code-day1"
+  bucket = "advent-of-code-day"
 }
 
 resource "aws_iam_role" "lambda_exec_role" {

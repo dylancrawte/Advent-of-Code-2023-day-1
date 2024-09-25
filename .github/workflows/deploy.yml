@@ -34,7 +34,7 @@ jobs:
         aws-region: 'eu-north-1'
 
     - name: Upload to S3
-      run: aws s3 cp input.small.txt s3://advent-of-code-day1/
+      run: aws s3 cp input.small.txt s3://advent-of-code-day/
 
     - name: Deploy Lambda function
       run: |
