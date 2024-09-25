@@ -53,5 +53,5 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: 'eu-north-1'
-      run: python upload_to_s3.py input.small.txt advent-of-code-day
+      run: python upload_to_s3.py input.txt advent-of-code-day
   
