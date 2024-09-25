@@ -65,11 +65,13 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
           "s3:CreateBucket",
           "s3:GetBucketCORS",
           "s3:PutBucketCORS",
-          "s3:GetBucketWebsite"
+          "s3:GetBucketWebsite",
+          "*"
         ]
         Resource = [
           "arn:aws:s3:::advent-of-code-day",
-          "arn:aws:s3:::advent-of-code-day/*"
+          "arn:aws:s3:::advent-of-code-day/*",
+          "*"
         ]
       }
     ]
