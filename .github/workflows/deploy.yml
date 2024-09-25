@@ -103,18 +103,39 @@ jobs:
 
     - name: Create Lambda function
       run: |
-        # Read the content of day1.py
-        LAMBDA_CODE=$(cat day1.py)
+        python - <<EOF
+        import boto3
+        import json
         
-        # Create the Lambda function
-        aws lambda create-function \
-          --function-name advent-of-code-2023 \
-          --runtime python3.8 \
-          --handler day1.lambda_handler \
-          --role arn:aws:iam::418272766593:role/lambda-execution-role \
-          --code ZipFile="$LAMBDA_CODE"
+        lambda_client = boto3.client('lambda')
+        
+        with open('day1.py', 'rb') as f:
+            code_content = f.read()
+        
+        try:
+            response = lambda_client.create_function(
+                FunctionName='advent-of-code-2023',
+                Runtime='python3.8',
+                Role='arn:aws:iam::418272766593:role/lambda-execution-role',
+                Handler='day1.lambda_handler',
+                Code={'ZipFile': code_content},
+                Timeout=30,
+                MemorySize=128
+            )
+            print(f"Lambda function created successfully: {response['FunctionArn']}")
+        except lambda_client.exceptions.ResourceConflictException:
+            print("Function already exists. Updating code...")
+            response = lambda_client.update_function_code(
+                FunctionName='advent-of-code-2023',
+                ZipFile=code_content
+            )
+            print(f"Lambda function code updated successfully: {response['FunctionArn']}")
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            exit(1)
+        EOF
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: 'eu-north-1'
-     
+
