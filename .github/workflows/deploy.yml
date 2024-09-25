@@ -107,7 +107,9 @@ jobs:
         import boto3
         import json
         
-        lambda_client = boto3.client('lambda')
+         # Explicitly set the region
+        region = os.environ.get('AWS_REGION', 'eu-north-1')
+        lambda_client = boto3.client('lambda', region_name=region)
         
         with open('day1.py', 'rb') as f:
             code_content = f.read()
