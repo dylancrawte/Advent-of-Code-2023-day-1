@@ -106,6 +106,7 @@ jobs:
         python - <<EOF
         import boto3
         import json
+        import os
         
          # Explicitly set the region
         region = os.environ.get('AWS_REGION', 'eu-north-1')
