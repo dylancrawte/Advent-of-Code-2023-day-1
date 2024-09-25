@@ -61,7 +61,8 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
           "s3:ListBucket",
           "s3:PutObject",
           "s3:HeadObject",
-          "s3:GetBucketAcl"  // Add this line
+          "s3:GetBucketAcl",
+          "s3:CreateBucket"
         ]
         Resource = [
           "arn:aws:s3:::advent-of-code-day",
