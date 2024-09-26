@@ -42,6 +42,7 @@ LOCATION 's3://advent-of-code-day/';
 -- Query the data from the external table
 SELECT line
 FROM advent_of_code_output;
+EOF
 }
 
 resource "aws_lambda_function" "day1_lambda" {
@@ -170,3 +171,4 @@ LOCATION 's3://${aws_s3_bucket.my_bucket.bucket}/';
 SELECT * FROM advent_table LIMIT 10;
 EOF
 
+}
