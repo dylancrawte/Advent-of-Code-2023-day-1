@@ -28,6 +28,9 @@ jobs:
       with:
         terraform_version: 1.0.0
 
+    - name: Execute day1.py
+      run: python day1.py
+
     - name: Zip Lambda function
       run: zip -j lambda_function.zip day1.py
 
