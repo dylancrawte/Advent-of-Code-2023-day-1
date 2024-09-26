@@ -47,16 +47,23 @@ def lambda_handler(event, context):
         logger.info(f"Calculated sum: {total_sum}")
         
         # Write the result to a local file
-        with open('/tmp/output.txt', 'w') as output_file:
+        output_path = '/tmp/output.txt'
+        with open(output_path, 'w') as output_file:
             output_file.write(str(total_sum))
+        
+        # Check if the file was created
+        if not os.path.exists(output_path):
+            raise FileNotFoundError(f"Output file was not created at {output_path}")
         
         # Upload the output file to S3
         logger.info(f"Attempting to upload {output_key} to {bucket_name}")
         try:
-            s3.upload_file('/tmp/output.txt', bucket_name, output_key)
+            s3.upload_file(output_path, bucket_name, output_key)
             logger.info(f"Successfully uploaded {output_key} to {bucket_name}")
         except ClientError as e:
-            logger.error(f"Failed to upload {output_key}: {str(e)}")
+            error_code = e.response['Error']['Code']
+            error_message = e.response['Error']['Message']
+            logger.error(f"Failed to upload {output_key}. Error code: {error_code}, Message: {error_message}")
             raise
 
         return {
