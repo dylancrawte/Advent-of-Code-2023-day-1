@@ -119,20 +119,21 @@ jobs:
       run: |
         python -c "import boto3; iam = boto3.client('iam'); iam.delete_role(RoleName='your-role-name')"
 
-    - name: Cleanup Athena databases on failure
+    - name: Cleanup Athena database on failure
       if: failure()
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: 'eu-north-1'
       run: |
+        pip install boto3
         python -c "
-        import boto3
-        athena = boto3.client('athena')
-        databases = athena.list_databases(CatalogName='AwsDataCatalog')['DatabaseList']
-        for db in databases:
-            if db['Name'].startswith('your_prefix_'):  # Replace with your database name prefix
-                athena.delete_database(CatalogName='AwsDataCatalog', DatabaseName=db['Name'])
+        from delete_athena_database import delete_athena_database
+        database_name = 'advent_database'
+        if delete_athena_database(database_name):
+            print(f'Athena database {database_name} deleted successfully.')
+        else:
+            print(f'Failed to delete Athena database {database_name}.')
         "
 
     - name: Deploy to AWS
