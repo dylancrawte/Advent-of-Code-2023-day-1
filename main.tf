@@ -153,6 +153,28 @@ resource "aws_athena_workgroup" "advent_workgroup" {
 resource "aws_athena_database" "advent_database" {
   name   = "advent_database"
   bucket = aws_s3_bucket.my_bucket.bucket
+  force_destroy = true
+
+  provisioner "local-exec" {
+    command = <<EOF
+      #!/bin/bash
+      set -e
+      
+      # Check if the database exists
+      if aws athena get-database --database-name advent_database --catalog-name AwsDataCatalog >/dev/null 2>&1; then
+        echo "Database exists. Deleting..."
+        aws athena delete-database --database-name advent_database --catalog-name AwsDataCatalog
+        echo "Database deleted."
+      else
+        echo "Database does not exist. Proceeding with creation."
+      fi
+    EOF
+  }
+
+  # This will ensure the resource is recreated
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_athena_named_query" "example_query" {
