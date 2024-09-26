@@ -98,4 +98,26 @@ jobs:
 
     - name: Terraform Destroy
       if: always()
-      run: terraform destroy -auto-appro
+      run: terraform destroy -auto-approve
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: 'eu-north-1'
+
+    - name: Cleanup S3 bucket
+      if: always()
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: 'eu-north-1'
+      run: |
+        python -c "import boto3; s3 = boto3.resource('s3'); bucket = s3.Bucket('advent-of-code-day'); bucket.objects.all().delete(); bucket.delete()"
+
+    - name: Cleanup IAM role
+      if: always()
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: 'eu-north-1'
+      run: |
+        python -c "import boto3; iam = boto3.client('iam'); iam.delete_role(RoleName='your-role-name')"

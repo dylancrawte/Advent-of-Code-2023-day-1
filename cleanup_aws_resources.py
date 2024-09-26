@@ -13,11 +13,16 @@ def cleanup_resources():
         # Check if bucket exists
         s3.head_bucket(Bucket=bucket_name)
         
-        # Empty the bucket first
-        paginator = s3.get_paginator('list_objects_v2')
+        # Empty the bucket first, including all versions and delete markers
+        paginator = s3.get_paginator('list_object_versions')
         for page in paginator.paginate(Bucket=bucket_name):
-            if 'Contents' in page:
-                objects_to_delete = [{'Key': obj['Key']} for obj in page['Contents']]
+            objects_to_delete = []
+            for version in page.get('Versions', []):
+                objects_to_delete.append({'Key': version['Key'], 'VersionId': version['VersionId']})
+            for marker in page.get('DeleteMarkers', []):
+                objects_to_delete.append({'Key': marker['Key'], 'VersionId': marker['VersionId']})
+            
+            if objects_to_delete:
                 s3.delete_objects(Bucket=bucket_name, Delete={'Objects': objects_to_delete})
         
         # Now delete the empty bucket
@@ -25,9 +30,8 @@ def cleanup_resources():
         print(f"Deleted S3 bucket: {bucket_name}")
     except s3.exceptions.NoSuchBucket:
         print(f"S3 bucket {bucket_name} does not exist. Skipping.")
-    except s3.exceptions.BucketAlreadyOwnedByYou:
-        print(f"S3 bucket {bucket_name} already exists and is owned by you. Proceeding with deletion.")
-        # Repeat the deletion process here
+    except s3.exceptions.BucketNotEmpty:
+        print(f"S3 bucket {bucket_name} is not empty. Please check bucket policies and object locks.")
     except Exception as e:
         print(f"Error deleting S3 bucket: {str(e)}")
 
@@ -44,24 +48,34 @@ def cleanup_resources():
     # Delete IAM role
     role_name = 'lambda_exec_role'
     try:
-        # Detach policies from the role
-        attached_policies = iam.list_attached_role_policies(RoleName=role_name)
-        for policy in attached_policies.get('AttachedPolicies', []):
-            iam.detach_role_policy(RoleName=role_name, PolicyArn=policy['PolicyArn'])
-        
+        # Remove instance profiles
+        instance_profiles = iam.list_instance_profiles_for_role(RoleName=role_name)
+        for profile in instance_profiles['InstanceProfiles']:
+            iam.remove_role_from_instance_profile(
+                InstanceProfileName=profile['InstanceProfileName'],
+                RoleName=role_name
+            )
+
+        # Detach managed policies
+        paginator = iam.get_paginator('list_attached_role_policies')
+        for page in paginator.paginate(RoleName=role_name):
+            for policy in page['AttachedPolicies']:
+                iam.detach_role_policy(RoleName=role_name, PolicyArn=policy['PolicyArn'])
+
         # Delete inline policies
-        inline_policies = iam.list_role_policies(RoleName=role_name)
-        for policy_name in inline_policies.get('PolicyNames', []):
-            iam.delete_role_policy(RoleName=role_name, PolicyName=policy_name)
-        
+        paginator = iam.get_paginator('list_role_policies')
+        for page in paginator.paginate(RoleName=role_name):
+            for policy_name in page['PolicyNames']:
+                iam.delete_role_policy(RoleName=role_name, PolicyName=policy_name)
+
         # Delete the role
         iam.delete_role(RoleName=role_name)
         print(f"Deleted IAM role: {role_name}")
     except iam.exceptions.NoSuchEntityException:
         print(f"IAM role {role_name} does not exist. Skipping.")
-    except iam.exceptions.DeleteConflictException:
-        print(f"IAM role {role_name} cannot be deleted due to existing resources. Detaching policies and trying again.")
-        # Add code here to forcefully detach all policies and delete the role
+    except iam.exceptions.DeleteConflictException as e:
+        print(f"IAM role {role_name} cannot be deleted due to existing resources: {str(e)}")
+        print("Please check for any resources still associated with this role.")
     except Exception as e:
         print(f"Error deleting IAM role: {str(e)}")
 
