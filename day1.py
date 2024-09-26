@@ -51,15 +51,31 @@ def lambda_handler(event, context):
         with open(output_path, 'w') as output_file:
             output_file.write(str(total_sum))
         
-        # Check if the file was created
+        # Check if the file was created and has content
         if not os.path.exists(output_path):
             raise FileNotFoundError(f"Output file was not created at {output_path}")
+        
+        file_size = os.path.getsize(output_path)
+        logger.info(f"Output file size: {file_size} bytes")
+        if file_size == 0:
+            raise ValueError("Output file is empty")
         
         # Upload the output file to S3
         logger.info(f"Attempting to upload {output_key} to {bucket_name}")
         try:
             s3.upload_file(output_path, bucket_name, output_key)
             logger.info(f"Successfully uploaded {output_key} to {bucket_name}")
+            
+            # Verify the file was uploaded
+            try:
+                s3.head_object(Bucket=bucket_name, Key=output_key)
+                logger.info(f"Verified {output_key} exists in {bucket_name}")
+            except ClientError as e:
+                if e.response['Error']['Code'] == "404":
+                    logger.error(f"File {output_key} was not found in {bucket_name} after upload")
+                else:
+                    logger.error(f"Error verifying file upload: {str(e)}")
+                raise
         except ClientError as e:
             error_code = e.response['Error']['Code']
             error_message = e.response['Error']['Message']
