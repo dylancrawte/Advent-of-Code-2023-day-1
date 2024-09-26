@@ -1,76 +1,98 @@
 import boto3
 import os
 import time
+import logging
+from botocore.exceptions import ClientError
 
-def lambda_handler(event, context):
-    s3_bucket = os.environ['S3_BUCKET']
-    sql_script = os.environ['SQL_SCRIPT']
-    athena_db = os.environ['ATHENA_DB']
-    athena_output = os.environ['ATHENA_OUTPUT']
+# Set up logging
+logging.basicConfig(filename='athena_debug.log', level=logging.DEBUG,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger()
 
-    athena_client = boto3.client('athena')
+def run_athena_query(query, database, s3_output):
+    client = boto3.client('athena')
+    
+    try:
+        # Start the query execution
+        response = client.start_query_execution(
+            QueryString=query,
+            QueryExecutionContext={'Database': database},
+            ResultConfiguration={'OutputLocation': s3_output}
+        )
+        
+        query_execution_id = response['QueryExecutionId']
+        logger.info(f"Started query execution with ID: {query_execution_id}")
+        
+        # Wait for the query to complete
+        while True:
+            response = client.get_query_execution(QueryExecutionId=query_execution_id)
+            state = response['QueryExecution']['Status']['State']
+            
+            if state == 'SUCCEEDED':
+                logger.info(f"Query succeeded: {query_execution_id}")
+                return state, query_execution_id
+            elif state in ['FAILED', 'CANCELLED']:
+                reason = response['QueryExecution']['Status'].get('StateChangeReason', 'No reason provided')
+                logger.error(f"Query {state.lower()}: {query_execution_id}. Reason: {reason}")
+                return state, query_execution_id
+            
+            logger.info(f"Query is still running. Current state: {state}")
+            time.sleep(5)  # Wait for 5 seconds before checking again
+    
+    except ClientError as e:
+        logger.error(f"AWS Error: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"An unexpected error occurred: {str(e)}")
+        raise
 
-    # Execute Athena query
-    response = athena_client.start_query_execution(
-        QueryString=sql_script,
-        QueryExecutionContext={
-            'Database': athena_db
-        },
-        ResultConfiguration={
-            'OutputLocation': athena_output
-        }
+def list_tables(database):
+    client = boto3.client('athena')
+    try:
+        response = client.list_table_metadata(
+            CatalogName='AwsDataCatalog',
+            DatabaseName=database
+        )
+        tables = [table['Name'] for table in response['TableMetadataList']]
+        logger.info(f"Tables in database {database}: {', '.join(tables)}")
+        return tables
+    except ClientError as e:
+        logger.error(f"Error listing tables: {str(e)}")
+        raise
+
+def main():
+    database = 'default'  # or your specific database name
+    s3_output = 's3://your-bucket/athena-results/'  # replace with your S3 bucket
+
+    # Create table query
+    create_table_query = """
+    CREATE EXTERNAL TABLE IF NOT EXISTS your_table_name (
+        -- Define your columns here
     )
+    LOCATION 's3://your-input-bucket/path-to-data/'
+    """
 
-    # Get query execution ID
-    query_execution_id = response['QueryExecutionId']
+    logger.info("Creating Athena table...")
+    state, query_id = run_athena_query(create_table_query, database, s3_output)
+    if state != 'SUCCEEDED':
+        logger.error("Failed to create table")
+        return
 
-    # Wait for query to complete
-    while True:
-        query_status = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
-        status = query_status['QueryExecution']['Status']['State']
-        if status in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
-            break
+    logger.info("Listing tables in the database...")
+    tables = list_tables(database)
+    if 'your_table_name' not in tables:
+        logger.error("The table was not created successfully")
+        return
 
-    # Fetch and return results
-    if status == 'SUCCEEDED':
-        results = get_query_results(query_execution_id)
-        # Format results as Markdown table
-        markdown_table = "| " + " | ".join(results['ResultSet']['Rows'][0]['Data']) + " |\n"
-        markdown_table += "|" + "---|" * len(results['ResultSet']['Rows'][0]['Data']) + "\n"
+    # Your analysis query
+    analysis_query = "SELECT * FROM your_table_name LIMIT 10"
 
-        for row in results['ResultSet']['Rows'][1:]:
-            markdown_table += "| " + " | ".join([data.get('VarCharValue', '') for data in row['Data']]) + " |\n"
-
-        # Write results to query_results.md
-        with open('query_results.md', 'w') as f:
-            f.write("# Athena Query Results\n\n")
-            f.write(markdown_table)
-
-        print("Query results have been written to query_results.md")
-        return {
-            'statusCode': 200,
-            'body': results['ResultSet']['Rows']
-        }
-    else:
-        return {
-            'statusCode': 500,
-            'body': f"Query failed with status: {status}"
-        }
-
-def get_query_results(query_execution_id):
-    athena_client = boto3.client('athena')
-    
-    while True:
-        response = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
-        state = response['QueryExecution']['Status']['State']
-        
-        if state in ['SUCCEEDED', 'FAILED', 'CANCELLED']:
-            break
-        
-        time.sleep(5)
-    
+    logger.info("Running analysis query...")
+    state, query_id = run_athena_query(analysis_query, database, s3_output)
     if state == 'SUCCEEDED':
-        results = athena_client.get_query_results(QueryExecutionId=query_execution_id)
-        return results
+        logger.info("Analysis query completed successfully")
     else:
-        raise Exception(f"Query failed with state: {state}")
+        logger.error("Analysis query failed")
+
+if __name__ == "__main__":
+    main()
