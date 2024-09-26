@@ -72,6 +72,17 @@ jobs:
         cat query_results.md
         cat athena_debug.log
 
+    - name: Configure Git
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
+    - name: Commit query results
+      run: |
+        git add query_results.md
+        git commit -m "Update Athena query results" || echo "No changes to commit"
+        git push
+
     - name: Cleanup AWS resources on failure
       if: failure()
       env:
