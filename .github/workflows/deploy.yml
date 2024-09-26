@@ -28,6 +28,17 @@ jobs:
       with:
         terraform_version: 1.0.0
 
+    - name: Cleanup AWS resources on failure
+      if: failure()
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: 'eu-north-1'
+      run: |
+        pip install boto3
+        python cleanup_aws_resources.py
+
+
     - name: Execute day1.py
       run: python day1.py
 
@@ -80,12 +91,3 @@ jobs:
         git config user.name github-actions
         git config user.email github-actions@github.com
 
-    - name: Cleanup AWS resources on failure
-      if: failure()
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: 'eu-north-1'
-      run: |
-        pip install boto3
-        python cleanup_aws_resources.py
