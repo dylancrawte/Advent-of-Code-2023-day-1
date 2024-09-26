@@ -59,7 +59,7 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: 'eu-north-1'
-      run: python athena_operations.py
+      run: python lambda_athena.py
 
     - name: Display results
       run: cat query_results.md

@@ -65,7 +65,7 @@ resource "aws_lambda_function" "day1_lambda" {
 resource "aws_lambda_function" "main_lambda" {
   function_name    = "advent-of-code-2023-main"
   role             = aws_iam_role.lambda_exec_role.arn
-  handler          = "lambda_function.lambda_handler"
+  handler          = "lambda_athena.lambda_handler"
   runtime          = "python3.8"
   filename         = data.archive_file.main_lambda_zip.output_path
   source_code_hash = data.archive_file.main_lambda_zip.output_base64sha256
@@ -88,7 +88,7 @@ data "archive_file" "day1_zip" {
 
 data "archive_file" "main_lambda_zip" {
   type        = "zip"
-  source_file = "lambda_function.py"
+  source_file = "lambda_athena.py"
   output_path = "main_lambda.zip"
 }
 
