@@ -1,4 +1,5 @@
 import boto3
+from delete_athena_database import delete_athena_database
 
 def cleanup_resources():
     # Initialize AWS clients
@@ -113,21 +114,11 @@ def cleanup_resources():
         print(f"Error deleting Athena workgroup: {str(e)}")
 
     # Delete Athena database
-    database_name = 'advent_database'
-    try:
-        # Check if the database exists
-        athena.get_database(CatalogName='AwsDataCatalog', DatabaseName=database_name)
-        # If it exists, delete it
-        athena.start_query_execution(
-            QueryString=f"DROP DATABASE IF EXISTS {database_name} CASCADE",
-            ResultConfiguration={'OutputLocation': f's3://{bucket_name}/athena-results/'},
-            WorkGroup=workgroup_name
-        )
-        print(f"Deleted Athena database: {database_name}")
-    except athena.exceptions.MetadataException:
-        print(f"Athena database {database_name} does not exist. Skipping.")
-    except Exception as e:
-        print(f"Error deleting Athena database: {str(e)}")
+    database_name = 'your_database_name'  # Replace with your actual database name
+    if delete_athena_database(database_name):
+        print(f"Athena database '{database_name}' deleted successfully.")
+    else:
+        print(f"Failed to delete Athena database '{database_name}'.")
 
 if __name__ == "__main__":
     cleanup_resources()
