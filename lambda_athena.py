@@ -12,6 +12,11 @@ logger = logging.getLogger()
 def run_athena_query(query, database, s3_output):
     client = boto3.client('athena')
     
+    # Validate S3 output location
+    if not s3_output.startswith('s3://'):
+        logger.error(f"Invalid S3 output location: {s3_output}. Must start with 's3://'")
+        return 'FAILED', None
+
     try:
         # Start the query execution
         response = client.start_query_execution(
@@ -40,16 +45,20 @@ def run_athena_query(query, database, s3_output):
             time.sleep(5)  # Wait for 5 seconds before checking again
     
     except ClientError as e:
-        if e.response['Error']['Code'] == 'AccessDeniedException':
+        error_code = e.response['Error']['Code']
+        error_message = e.response['Error']['Message']
+        if error_code == 'InvalidRequestException':
+            logger.error(f"Invalid request: {error_message}")
+            logger.error("Please check that your S3 output location is correct and in the same region as your Athena query.")
+        elif error_code == 'AccessDeniedException':
             logger.error("Access Denied: Insufficient permissions to execute Athena query.")
-            logger.error("Please ensure your IAM role has the 'athena:StartQueryExecution' permission.")
-            return 'FAILED', None
+            logger.error("Please ensure your IAM role has the necessary permissions for Athena and S3.")
         else:
-            logger.error(f"AWS Error: {str(e)}")
-        raise
+            logger.error(f"AWS Error: {error_code} - {error_message}")
+        return 'FAILED', None
     except Exception as e:
         logger.error(f"An unexpected error occurred: {str(e)}")
-        raise
+        return 'FAILED', None
 
 def list_tables(database):
     client = boto3.client('athena')
