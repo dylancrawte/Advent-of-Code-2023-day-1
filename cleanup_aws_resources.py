@@ -5,6 +5,7 @@ def cleanup_resources():
     s3 = boto3.client('s3')
     lambda_client = boto3.client('lambda')
     iam = boto3.client('iam')
+    athena = boto3.client('athena')
 
     # Delete S3 bucket
     bucket_name = 'advent-of-code-day'
@@ -40,6 +41,11 @@ def cleanup_resources():
         for policy in attached_policies.get('AttachedPolicies', []):
             iam.detach_role_policy(RoleName=role_name, PolicyArn=policy['PolicyArn'])
         
+        # Delete inline policies
+        inline_policies = iam.list_role_policies(RoleName=role_name)
+        for policy_name in inline_policies.get('PolicyNames', []):
+            iam.delete_role_policy(RoleName=role_name, PolicyName=policy_name)
+        
         # Delete the role
         iam.delete_role(RoleName=role_name)
         print(f"Deleted IAM role: {role_name}")
@@ -67,6 +73,27 @@ def cleanup_resources():
         print(f"IAM policy {policy_name} does not exist. Skipping.")
     except Exception as e:
         print(f"Error deleting IAM policy: {str(e)}")
+
+    # Delete Athena workgroup
+    workgroup_name = 'advent_workgroup'
+    try:
+        athena.delete_work_group(WorkGroup=workgroup_name, RecursiveDeleteOption=True)
+        print(f"Deleted Athena workgroup: {workgroup_name}")
+    except athena.exceptions.InvalidRequestException:
+        print(f"Athena workgroup {workgroup_name} does not exist. Skipping.")
+    except Exception as e:
+        print(f"Error deleting Athena workgroup: {str(e)}")
+
+    # Delete Athena database
+    database_name = 'advent_database'
+    try:
+        athena.start_query_execution(
+            QueryString=f"DROP DATABASE IF EXISTS {database_name} CASCADE",
+            ResultConfiguration={'OutputLocation': f's3://{bucket_name}/athena-results/'}
+        )
+        print(f"Deleted Athena database: {database_name}")
+    except Exception as e:
+        print(f"Error deleting Athena database: {str(e)}")
 
 if __name__ == "__main__":
     cleanup_resources()
