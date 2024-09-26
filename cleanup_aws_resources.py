@@ -48,5 +48,25 @@ def cleanup_resources():
     except Exception as e:
         print(f"Error deleting IAM role: {str(e)}")
 
+    # Delete IAM policy
+    policy_name = 'lambda_exec_role'
+    try:
+        # List all versions of the policy
+        versions = iam.list_policy_versions(PolicyArn=f"arn:aws:iam::{boto3.client('sts').get_caller_identity()['Account']}:policy/{policy_name}")
+        
+        # Delete all non-default versions
+        for version in versions['Versions']:
+            if not version['IsDefaultVersion']:
+                iam.delete_policy_version(PolicyArn=f"arn:aws:iam::{boto3.client('sts').get_caller_identity()['Account']}:policy/{policy_name}", 
+                                          VersionId=version['VersionId'])
+        
+        # Delete the policy
+        iam.delete_policy(PolicyArn=f"arn:aws:iam::{boto3.client('sts').get_caller_identity()['Account']}:policy/{policy_name}")
+        print(f"Deleted IAM policy: {policy_name}")
+    except iam.exceptions.NoSuchEntityException:
+        print(f"IAM policy {policy_name} does not exist. Skipping.")
+    except Exception as e:
+        print(f"Error deleting IAM policy: {str(e)}")
+
 if __name__ == "__main__":
     cleanup_resources()
