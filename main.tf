@@ -58,10 +58,8 @@ output "s3_bucket_name" {
 
 output "lambda_function_name" {
   value = aws_lambda_function.my_lambda.function_name
-}o
+}
 
-
-// Add this new resource
 resource "aws_iam_role_policy" "lambda_s3_policy" {
   name = "lambda_s3_policy"
   role = aws_iam_role.lambda_exec_role.id
@@ -92,7 +90,6 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
     ]
   })
 }
-
 
 // Add IAM permissions for Athena and Glue
 resource "aws_iam_role_policy_attachment" "lambda_athena_policy" {
