@@ -29,12 +29,27 @@ resource "aws_iam_role" "lambda_exec_role" {
 }
 
 resource "aws_lambda_function" "my_lambda" {
-  function_name = "advent-of-code-2023"
-  role          = aws_iam_role.lambda_exec_role.arn
-  handler       = "day1.lambda_handler"  
-  runtime       = "python3.8"
-  filename      = "day1.zip"
-  source_code_hash = filebase64sha256("day1.zip")
+  function_name    = "advent-of-code-2023"
+  role             = aws_iam_role.lambda_exec_role.arn
+  handler          = "lambda_function.lambda_handler"
+  runtime          = "python3.8"
+  filename         = data.archive_file.lambda_zip.output_path
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      S3_BUCKET     = aws_s3_bucket.my_bucket.bucket
+      SQL_SCRIPT    = file("present_data.sql")
+      ATHENA_DB     = aws_athena_database.advent_database.name
+      ATHENA_OUTPUT = "s3://${aws_s3_bucket.my_bucket.bucket}/athena_results/"
+    }
+  }
+}
+
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "lambda_function.py"
+  output_path = "lambda_function.zip"
 }
 
 output "s3_bucket_name" {
@@ -43,7 +58,7 @@ output "s3_bucket_name" {
 
 output "lambda_function_name" {
   value = aws_lambda_function.my_lambda.function_name
-}
+}o
 
 
 // Add this new resource
@@ -76,5 +91,44 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
       }
     ]
   })
+}
+
+
+// Add IAM permissions for Athena and Glue
+resource "aws_iam_role_policy_attachment" "lambda_athena_policy" {
+  role       = aws_iam_role.lambda_exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
+}
+
+resource "aws_athena_workgroup" "advent_workgroup" {
+  name = "advent_workgroup"
+
+  configuration {
+    result_configuration {
+      output_location = "s3://${aws_s3_bucket.my_bucket.bucket}/athena_results/"
+    }
+  }
+}
+
+resource "aws_athena_database" "advent_database" {
+  name   = "advent_database"
+  bucket = aws_s3_bucket.my_bucket.bucket
+}
+
+resource "aws_athena_named_query" "example_query" {
+  name      = "example_query"
+  workgroup = aws_athena_workgroup.advent_workgroup.name
+  database  = aws_athena_database.advent_database.name
+  query     = <<EOF
+CREATE EXTERNAL TABLE IF NOT EXISTS advent_table (
+  column1 int
+)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE
+LOCATION 's3://${aws_s3_bucket.my_bucket.bucket}/';
+
+SELECT * FROM advent_table LIMIT 10;
+EOF
 }
 
