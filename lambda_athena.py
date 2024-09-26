@@ -40,7 +40,12 @@ def run_athena_query(query, database, s3_output):
             time.sleep(5)  # Wait for 5 seconds before checking again
     
     except ClientError as e:
-        logger.error(f"AWS Error: {str(e)}")
+        if e.response['Error']['Code'] == 'AccessDeniedException':
+            logger.error("Access Denied: Insufficient permissions to execute Athena query.")
+            logger.error("Please ensure your IAM role has the 'athena:StartQueryExecution' permission.")
+            return 'FAILED', None
+        else:
+            logger.error(f"AWS Error: {str(e)}")
         raise
     except Exception as e:
         logger.error(f"An unexpected error occurred: {str(e)}")
@@ -75,7 +80,10 @@ def main():
     logger.info("Creating Athena table...")
     state, query_id = run_athena_query(create_table_query, database, s3_output)
     if state != 'SUCCEEDED':
-        logger.error("Failed to create table")
+        if query_id is None:
+            logger.error("Failed to start query execution. Check your AWS permissions.")
+        else:
+            logger.error(f"Failed to create table. Query ID: {query_id}")
         return
 
     logger.info("Listing tables in the database...")
