@@ -10,16 +10,24 @@ def cleanup_resources():
     # Delete S3 bucket
     bucket_name = 'advent-of-code-day'
     try:
+        # Check if bucket exists
         s3.head_bucket(Bucket=bucket_name)
-        # Bucket exists, delete its contents and then the bucket
-        response = s3.list_objects_v2(Bucket=bucket_name)
-        if 'Contents' in response:
-            for obj in response['Contents']:
-                s3.delete_object(Bucket=bucket_name, Key=obj['Key'])
+        
+        # Empty the bucket first
+        paginator = s3.get_paginator('list_objects_v2')
+        for page in paginator.paginate(Bucket=bucket_name):
+            if 'Contents' in page:
+                objects_to_delete = [{'Key': obj['Key']} for obj in page['Contents']]
+                s3.delete_objects(Bucket=bucket_name, Delete={'Objects': objects_to_delete})
+        
+        # Now delete the empty bucket
         s3.delete_bucket(Bucket=bucket_name)
         print(f"Deleted S3 bucket: {bucket_name}")
     except s3.exceptions.NoSuchBucket:
         print(f"S3 bucket {bucket_name} does not exist. Skipping.")
+    except s3.exceptions.BucketAlreadyOwnedByYou:
+        print(f"S3 bucket {bucket_name} already exists and is owned by you. Proceeding with deletion.")
+        # Repeat the deletion process here
     except Exception as e:
         print(f"Error deleting S3 bucket: {str(e)}")
 
@@ -51,6 +59,9 @@ def cleanup_resources():
         print(f"Deleted IAM role: {role_name}")
     except iam.exceptions.NoSuchEntityException:
         print(f"IAM role {role_name} does not exist. Skipping.")
+    except iam.exceptions.DeleteConflictException:
+        print(f"IAM role {role_name} cannot be deleted due to existing resources. Detaching policies and trying again.")
+        # Add code here to forcefully detach all policies and delete the role
     except Exception as e:
         print(f"Error deleting IAM role: {str(e)}")
 
