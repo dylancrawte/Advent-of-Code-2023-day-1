@@ -172,3 +172,33 @@ SELECT * FROM advent_table LIMIT 10;
 EOF
 
 }
+
+resource "null_resource" "cleanup_script" {
+  provisioner "local-exec" {
+    command = <<-EOT
+      cat <<EOF > cleanup.sh
+      #!/bin/bash
+      set -e
+
+      # Delete S3 bucket
+      aws s3 rb s3://${aws_s3_bucket.my_bucket.bucket} --force
+
+      # Delete Lambda functions
+      aws lambda delete-function --function-name ${aws_lambda_function.day1_lambda.function_name}
+      aws lambda delete-function --function-name ${aws_lambda_function.main_lambda.function_name}
+
+      # Delete IAM role
+      aws iam delete-role --role-name ${aws_iam_role.lambda_exec_role.name}
+
+      # Delete Athena workgroup and database
+      aws athena delete-work-group --work-group ${aws_athena_workgroup.advent_workgroup.name} --recursive-delete-option
+      aws athena delete-data-catalog --name ${aws_athena_database.advent_database.name}
+    EOF
+      chmod +x cleanup.sh
+    EOT
+  }
+}
+
+output "cleanup_script_path" {
+  value = "${path.module}/cleanup.sh"
+}

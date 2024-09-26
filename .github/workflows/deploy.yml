@@ -91,3 +91,11 @@ jobs:
         git config user.name github-actions
         git config user.email github-actions@github.com
 
+    - name: Cleanup on failure
+      if: failure()
+      run: |
+        terraform output -raw cleanup_script_path | bash
+
+    - name: Terraform Destroy
+      if: always()
+      run: terraform destroy -auto-appro
