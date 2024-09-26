@@ -114,7 +114,7 @@ def cleanup_resources():
         print(f"Error deleting Athena workgroup: {str(e)}")
 
     # Delete Athena database
-    database_name = 'your_database_name'  # Replace with your actual database name
+    database_name = 'advent_database'
     if delete_athena_database(database_name):
         print(f"Athena database '{database_name}' deleted successfully.")
     else:
