@@ -18,14 +18,8 @@ def delete_athena_database(database_name):
         
         logger.info(f"Successfully deleted Athena database: {database_name}")
         return True
-    except athena_client.exceptions.InternalServerException:
-        logger.error(f"An internal error occurred while deleting the database: {database_name}")
-    except athena_client.exceptions.InvalidRequestException:
-        logger.error(f"Invalid request to delete database: {database_name}")
-    except athena_client.exceptions.MetadataException:
-        logger.error(f"A metadata error occurred while deleting the database: {database_name}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred: {str(e)}")
+        logger.error(f"An error occurred: {str(e)}")
     
     return False
 
