@@ -76,7 +76,7 @@ def list_tables(database):
 
 def main():
     database = 'default'  # or your specific database name
-    s3_output = 's3://advent-of-code-day/athena-results/'  # replace with your valid S3 bucket
+    s3_output = 's3://advent-of-code-day/'  # replace with your valid S3 bucket
 
     # Create table query
     create_table_query = """
