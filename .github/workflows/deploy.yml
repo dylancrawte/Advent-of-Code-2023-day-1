@@ -31,14 +31,6 @@ jobs:
     - name: Execute day1.py
       run: python day1.py
 
-    - name: Upload day1 output to S3
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: 'eu-north-1'
-      run: |
-        python upload_to_s3.py output.txt advent-of-code-day
-
     - name: Zip Lambda function
       run: zip -j lambda_function.zip day1.py
 
