@@ -61,8 +61,8 @@ jobs:
         AWS_DEFAULT_REGION: 'eu-north-1'
       run: python lambda_athena.py
 
-    - name: Display results
-      run: cat query_results.md
+    #name: Display results
+    #run: cat query_results.md
 
     - name: Cleanup AWS resources on failure
       if: failure()
