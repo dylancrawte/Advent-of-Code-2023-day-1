@@ -82,14 +82,14 @@ resource "aws_lambda_function" "main_lambda" {
 
 data "archive_file" "day1_zip" {
   type        = "zip"
-  source_file = "day1.py"
-  output_path = "day1_lambda.zip"
+  source_file = "${path.module}/day1.py"
+  output_path = "${path.module}/day1_lambda.zip"
 }
 
 data "archive_file" "main_lambda_zip" {
   type        = "zip"
-  source_file = "lambda_athena.py"
-  output_path = "main_lambda.zip"
+  source_file = "${path.module}/lambda_athena.py"
+  output_path = "${path.module}/main_lambda.zip"
 }
 
 output "s3_bucket_name" {
@@ -122,13 +122,11 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
           "s3:CreateBucket",
           "s3:GetBucketCORS",
           "s3:PutBucketCORS",
-          "s3:GetBucketWebsite",
-          "*"
+          "s3:GetBucketWebsite"
         ]
         Resource = [
-          "arn:aws:s3:::advent-of-code-day",
-          "arn:aws:s3:::advent-of-code-day/*",
-          "*"
+          "arn:aws:s3:::${aws_s3_bucket.my_bucket.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.my_bucket.bucket}/*"
         ]
       }
     ]
@@ -171,5 +169,4 @@ LOCATION 's3://${aws_s3_bucket.my_bucket.bucket}/';
 
 SELECT * FROM advent_table LIMIT 10;
 EOF
-}
 
