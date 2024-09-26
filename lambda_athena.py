@@ -71,10 +71,19 @@ def main():
 
     # Create table query
     create_table_query = """
-    CREATE EXTERNAL TABLE IF NOT EXISTS your_table_name (
-        -- Define your columns here
+    CREATE EXTERNAL TABLE IF NOT EXISTS user_data (
+        user_id STRING,
+        username STRING,
+        email STRING,
+        registration_date DATE,
+        last_login TIMESTAMP,
+        age INT,
+        is_active BOOLEAN
     )
-    LOCATION 's3://your-input-bucket/path-to-data/'
+    ROW FORMAT DELIMITED
+    FIELDS TERMINATED BY ','
+    STORED AS TEXTFILE
+    LOCATION 's3://your-input-bucket/user-data/'
     """
 
     logger.info("Creating Athena table...")
