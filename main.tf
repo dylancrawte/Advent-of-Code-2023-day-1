@@ -28,13 +28,13 @@ resource "aws_iam_role" "lambda_exec_role" {
   ]
 }
 
-resource "aws_lambda_function" "my_lambda" {
-  function_name    = "advent-of-code-2023"
+resource "aws_lambda_function" "day1_lambda" {
+  function_name    = "advent-of-code-2023-day1"
   role             = aws_iam_role.lambda_exec_role.arn
-  handler          = "lambda_function.lambda_handler"
+  handler          = "day1.lambda_handler"
   runtime          = "python3.8"
-  filename         = data.archive_file.lambda_zip.output_path
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  filename         = data.archive_file.day1_zip.output_path
+  source_code_hash = data.archive_file.day1_zip.output_base64sha256
 
   environment {
     variables = {
@@ -46,18 +46,46 @@ resource "aws_lambda_function" "my_lambda" {
   }
 }
 
-data "archive_file" "lambda_zip" {
+resource "aws_lambda_function" "main_lambda" {
+  function_name    = "advent-of-code-2023-main"
+  role             = aws_iam_role.lambda_exec_role.arn
+  handler          = "lambda_function.lambda_handler"
+  runtime          = "python3.8"
+  filename         = data.archive_file.main_lambda_zip.output_path
+  source_code_hash = data.archive_file.main_lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      S3_BUCKET     = aws_s3_bucket.my_bucket.bucket
+      SQL_SCRIPT    = file("present_data.sql")
+      ATHENA_DB     = aws_athena_database.advent_database.name
+      ATHENA_OUTPUT = "s3://${aws_s3_bucket.my_bucket.bucket}/athena_results/"
+    }
+  }
+}
+
+data "archive_file" "day1_zip" {
+  type        = "zip"
+  source_file = "day1.py"
+  output_path = "day1_lambda.zip"
+}
+
+data "archive_file" "main_lambda_zip" {
   type        = "zip"
   source_file = "lambda_function.py"
-  output_path = "lambda_function.zip"
+  output_path = "main_lambda.zip"
 }
 
 output "s3_bucket_name" {
   value = aws_s3_bucket.my_bucket.bucket
 }
 
-output "lambda_function_name" {
-  value = aws_lambda_function.my_lambda.function_name
+output "day1_lambda_function_name" {
+  value = aws_lambda_function.day1_lambda.function_name
+}
+
+output "main_lambda_function_name" {
+  value = aws_lambda_function.main_lambda.function_name
 }
 
 resource "aws_iam_role_policy" "lambda_s3_policy" {
