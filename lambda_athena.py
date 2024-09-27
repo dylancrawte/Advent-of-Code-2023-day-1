@@ -102,16 +102,22 @@ def main():
     if not create_database(database, s3_output):
         return
 
-    # Updated create table query for a single column, mapping to output.txt
+    # Updated create table query for a single column, specifically for output.txt
     create_table_query = """
     CREATE EXTERNAL TABLE IF NOT EXISTS output_data (
-        digit INT
+        value STRING
     )
     ROW FORMAT DELIMITED
     FIELDS TERMINATED BY '\n'
     STORED AS TEXTFILE
     LOCATION 's3://advent-of-code-day/'
-    TBLPROPERTIES ('skip.header.line.count'='0', 'serialization.null.format'='')
+    TBLPROPERTIES (
+        'skip.header.line.count'='0',
+        'serialization.null.format'='',
+        'input.format'='org.apache.hadoop.mapred.TextInputFormat',
+        'input.regex'='(.*)',
+        'input.filename'='output.txt'
+    )
     """
 
     logger.info("Creating Athena table...")
@@ -130,7 +136,7 @@ def main():
         return
 
     # Updated analysis query
-    analysis_query = "SELECT digit FROM output_data LIMIT 10"
+    analysis_query = "SELECT value FROM output_data LIMIT 10"
 
     logger.info("Running analysis query...")
     state, query_id = run_athena_query(analysis_query, database, s3_output)
