@@ -79,7 +79,13 @@ def create_database(database_name, s3_output):
     create_db_query = f"CREATE DATABASE IF NOT EXISTS {database_name}"
     
     logger.info(f"Creating database: {database_name}")
+    logger.info(f"Using S3 output: {s3_output}")
+    logger.info(f"Query: {create_db_query}")
+    
     state, query_id = run_athena_query(create_db_query, 'default', s3_output)
+    
+    logger.info(f"Query execution state: {state}")
+    logger.info(f"Query execution ID: {query_id}")
     
     if state == 'SUCCEEDED':
         logger.info(f"Database '{database_name}' created successfully")
