@@ -2,18 +2,14 @@ terraform {
   backend "s3" {
     bucket         = "advent-of-code-terraform-state"
     key            = "advent-of-code/main.tfstate"
-    region         = "eu-north-1"
+    region         = "us-west-2"
     dynamodb_table = "advent-of-code-terraform-lock"
     encrypt        = true
-    access_key     = "secret.AWS_ACCESS_KEY_ID"
-    secret_key     = "secret.AWS_SECRET_ACCESS_KEY"
   }
 }
 
 provider "aws" {
-  region     = "eu-north-1"
-  access_key = "secret.AWS_ACCESS_KEY_ID"
-  secret_key = "secret.AWS_SECRET_ACCESS_KEY"
+  region = "us-west-2"
 }
 
 resource "aws_s3_bucket" "my_bucket" {
