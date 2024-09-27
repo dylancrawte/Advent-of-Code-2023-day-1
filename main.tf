@@ -5,12 +5,11 @@ terraform {
     region         = "us-west-2"
     dynamodb_table = "advent-of-code-terraform-lock"
     encrypt        = true
-    access_key     = "AKIAWCYX75KA27J2PXLV"
-    secret_key     = "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"
-    
+    // Remove the following two lines
+    // access_key     = "AKIAWCYX75KA27J2PXLV"
+    // secret_key     = "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"
   }
 }
-
 
 resource "aws_s3_bucket" "my_bucket" {
   bucket = "advent-of-code-day"
@@ -203,4 +202,45 @@ LOCATION 's3://${aws_s3_bucket.my_bucket.bucket}/';
 SELECT * FROM advent_table LIMIT 10;
 EOF
 
+}
+
+// Add this new resource
+resource "aws_iam_user_policy" "dylan_test_s3_access" {
+  name = "dylan_test_s3_access"
+  user = "Dylan_Test"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation",
+          "s3:ListBucketMultipartUploads"
+        ]
+        Resource = "arn:aws:s3:::advent-of-code-terraform-state"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:ListMultipartUploadParts",
+          "s3:AbortMultipartUpload"
+        ]
+        Resource = "arn:aws:s3:::advent-of-code-terraform-state/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "arn:aws:dynamodb:us-west-2:418272766593:table/advent-of-code-terraform-lock"
+      }
+    ]
+  })
 }
