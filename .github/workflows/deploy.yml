@@ -71,6 +71,12 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-duration-seconds: 1200
 
+    - name: Create Athena Database
+      run: |
+        aws athena start-query-execution \
+          --query-string "CREATE DATABASE IF NOT EXISTS advent_database" \
+          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/
+
     - name: Execute Lambda function advent-of-code-2023-main
       run: |
         aws lambda invoke --function-name advent-of-code-2023-main \
