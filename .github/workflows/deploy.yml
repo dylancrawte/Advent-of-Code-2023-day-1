@@ -71,10 +71,39 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-duration-seconds: 1200
 
-    - name: Create Athena Database
+    - name: Create Athena Database and Table
       run: |
         aws athena start-query-execution \
           --query-string "CREATE DATABASE IF NOT EXISTS advent_database" \
+          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/
+        
+        aws athena start-query-execution \
+          --query-string "
+          CREATE EXTERNAL TABLE IF NOT EXISTS advent_database.user_data (
+            -- Define your columns here, for example:
+            id INT,
+            name STRING,
+            email STRING
+          )
+          ROW FORMAT DELIMITED
+          FIELDS TERMINATED BY ','
+          STORED AS TEXTFILE
+          LOCATION 's3://advent-of-code-day/user_data/'
+          " \
+          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/
+        
+        aws athena start-query-execution \
+          --query-string "MSCK REPAIR TABLE advent_database.user_data" \
+          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/
+
+    - name: Verify Table Creation
+      run: |
+        aws athena start-query-execution \
+          --query-string "SHOW TABLES IN advent_database" \
+          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/
+        
+        aws athena start-query-execution \
+          --query-string "SELECT * FROM advent_database.user_data LIMIT 10" \
           --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/
 
     - name: Execute Lambda function advent-of-code-2023-main
