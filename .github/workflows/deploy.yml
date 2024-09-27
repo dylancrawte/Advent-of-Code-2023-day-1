@@ -60,8 +60,7 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_DEFAULT_REGION: 'us-west-2'
-      run: |
-        aws s3 cp output.txt s3://advent-of-code-day/output.txt
+      run: python upload_to_s3.py input.txt advent-of-code-day
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -71,6 +70,14 @@ jobs:
         aws-region: us-west-2
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-duration-seconds: 1200
+
+    - name: Run Lambda function advent-of-code-day
+      run: |
+        aws lambda invoke --function-name advent-of-code-2023-day1 \
+          --payload '{}' \
+          --cli-binary-format raw-in-base64-out \
+          response.json
+        cat response.json
 
     - name: Create Athena table and run query
       run: python lambda_athena.py
