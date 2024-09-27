@@ -169,15 +169,27 @@ resource "aws_athena_database" "advent_database" {
       # Check if the database exists
       if aws athena get-database --database-name advent_database --catalog-name AwsDataCatalog >/dev/null 2>&1; then
         echo "Database exists. Deleting..."
-        aws athena delete-database --database-name advent_database --catalog-name AwsDataCatalog
-        echo "Database deleted."
+        QUERY="DROP DATABASE advent_database"
+        QUERY_EXECUTION_ID=$(aws athena start-query-execution --query-string "$QUERY" --result-configuration "OutputLocation=s3://${aws_s3_bucket.my_bucket.bucket}/athena_results/" --query-execution-context Database=default,Catalog=AwsDataCatalog --output text)
+        
+        # Wait for the query to complete
+        while true; do
+          STATUS=$(aws athena get-query-execution --query-execution-id $QUERY_EXECUTION_ID --query 'QueryExecution.Status.State' --output text)
+          if [ $STATUS = "SUCCEEDED" ]; then
+            echo "Database deleted."
+            break
+          elif [ $STATUS = "FAILED" ] || [ $STATUS = "CANCELLED" ]; then
+            echo "Failed to delete database."
+            exit 1
+          fi
+          sleep 2
+        done
       else
         echo "Database does not exist. Proceeding with creation."
       fi
     EOF
   }
 
-  # This will ensure the resource is recreated
   lifecycle {
     create_before_destroy = true
   }
