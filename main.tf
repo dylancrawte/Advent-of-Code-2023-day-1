@@ -203,4 +203,4 @@ LOCATION 's3://${aws_s3_bucket.my_bucket.bucket}/';
 SELECT * FROM advent_table LIMIT 10;
 EOF
 
-}a
+}
