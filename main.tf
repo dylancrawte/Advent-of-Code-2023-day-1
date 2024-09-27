@@ -1,13 +1,10 @@
 terraform {
   backend "s3" {
     bucket         = "advent-of-code-terraform-state"
-    key            = "advent-of-code/main.tfstate"
+    key            = "advent-of-code.tfstate"
     region         = "us-west-2"
     dynamodb_table = "advent-of-code-terraform-lock"
     encrypt        = true
-    access_key     = "AKIAWCYX75KA27J2PXLV"
-    secret_key     = "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"
-    
   }
 }
 
