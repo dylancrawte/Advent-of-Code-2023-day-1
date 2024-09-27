@@ -5,6 +5,8 @@ terraform {
     region         = "us-west-2"
     dynamodb_table = "advent-of-code-terraform-lock"
     encrypt        = true
+    access_key     = AKIAWCYX75KA27J2PXLV
+    secret_key     = 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
   }
 }
 
