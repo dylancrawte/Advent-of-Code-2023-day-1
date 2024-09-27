@@ -76,23 +76,22 @@ def list_tables(database):
 
 def main():
     database = 'default'  # or your specific database name
-    s3_output = 's3://advent-of-code-day/'  # replace with your valid S3 bucket
+    s3_output = 's3://advent-of-code-day/'  # your S3 bucket for query results
 
-    # Create table query
+    # Updated create table query
     create_table_query = """
-    CREATE EXTERNAL TABLE IF NOT EXISTS user_data (
-        user_id STRING,
-        username STRING,
-        email STRING,
-        registration_date DATE,
-        last_login TIMESTAMP,
-        age INT,
-        is_active BOOLEAN
+    CREATE EXTERNAL TABLE IF NOT EXISTS output_data (
+        -- Define your columns here based on the structure of output.txt
+        -- For example:
+        column1 STRING,
+        column2 INT,
+        column3 DOUBLE
     )
     ROW FORMAT DELIMITED
-    FIELDS TERMINATED BY ','
+    FIELDS TERMINATED BY ',' -- Adjust this if your file uses a different delimiter
     STORED AS TEXTFILE
-    LOCATION 's3://your-input-bucket/user-data/'
+    LOCATION 's3://advent-of-code-day/'
+    TBLPROPERTIES ('skip.header.line.count'='1') -- Add this if your file has a header
     """
 
     logger.info("Creating Athena table...")
@@ -106,12 +105,12 @@ def main():
 
     logger.info("Listing tables in the database...")
     tables = list_tables(database)
-    if 'your_table_name' not in tables:
+    if 'output_data' not in tables:
         logger.error("The table was not created successfully")
         return
 
     # Your analysis query
-    analysis_query = "SELECT * FROM your_table_name LIMIT 10"
+    analysis_query = "SELECT * FROM output_data LIMIT 10"
 
     logger.info("Running analysis query...")
     state, query_id = run_athena_query(analysis_query, database, s3_output)

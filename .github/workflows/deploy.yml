@@ -71,40 +71,17 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-duration-seconds: 1200
 
-    - name: Run Lambda function advent-of-code-day
+    - name: Execute Lambda function advent-of-code-2023-main
       run: |
-        aws lambda invoke --function-name advent-of-code-2023-day1 \
+        aws lambda invoke --function-name advent-of-code-2023-main \
           --payload '{}' \
           --cli-binary-format raw-in-base64-out \
           response.json
         cat response.json
 
-    - name: Upload output.txt to Athena table
+    - name: Display results
       run: |
-        # Create the Athena table if it doesn't exist
-        aws athena start-query-execution \
-          --query-string "CREATE EXTERNAL TABLE IF NOT EXISTS advent_output (line STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\n' STORED AS TEXTFILE LOCATION 's3://advent-of-code-day/'" \
-          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/ \
-          --query-execution-context Database=advent_database
-
-        # Wait for the table creation query to complete
-        sleep 10
-
-        # Load data from output.txt into the Athena table
-        aws athena start-query-execution \
-          --query-string "INSERT INTO advent_output SELECT * FROM s3_table WHERE \"$path\" LIKE '%output.txt'" \
-          --result-configuration OutputLocation=s3://advent-of-code-day/athena_results/ \
-          --query-execution-context Database=advent_database
-
-        echo "Data from output.txt has been loaded into the Athena table 'advent_output'"
-
-    - name: Create Athena table and run query
-      run: python lambda_athena.py
-
-    - name: Display results and logs
-      run: |
-        cat query_results.md
-        cat athena_debug.log
+        cat response.json
 
     - name: Configure Git
       run: |
