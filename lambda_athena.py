@@ -78,20 +78,16 @@ def main():
     database = 'default'  # or your specific database name
     s3_output = 's3://advent-of-code-day/'  # your S3 bucket for query results
 
-    # Updated create table query
+    # Updated create table query for a single column
     create_table_query = """
     CREATE EXTERNAL TABLE IF NOT EXISTS output_data (
-        -- Define your columns here based on the structure of output.txt
-        -- For example:
-        column1 STRING,
-        column2 INT,
-        column3 DOUBLE
+        digit INT
     )
     ROW FORMAT DELIMITED
-    FIELDS TERMINATED BY ',' -- Adjust this if your file uses a different delimiter
+    FIELDS TERMINATED BY '\n'
     STORED AS TEXTFILE
     LOCATION 's3://advent-of-code-day/'
-    TBLPROPERTIES ('skip.header.line.count'='1') -- Add this if your file has a header
+    TBLPROPERTIES ('skip.header.line.count'='0')
     """
 
     logger.info("Creating Athena table...")
@@ -109,8 +105,8 @@ def main():
         logger.error("The table was not created successfully")
         return
 
-    # Your analysis query
-    analysis_query = "SELECT * FROM output_data LIMIT 10"
+    # Updated analysis query
+    analysis_query = "SELECT digit FROM output_data LIMIT 10"
 
     logger.info("Running analysis query...")
     state, query_id = run_athena_query(analysis_query, database, s3_output)
