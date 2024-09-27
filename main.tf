@@ -216,7 +216,10 @@ resource "aws_iam_user_policy" "dylan_test_s3_access" {
           "s3:GetBucketLocation",
           "s3:ListBucketMultipartUploads"
         ]
-        Resource = "arn:aws:s3:::advent-of-code-terraform-state"
+        Resource = [
+          "arn:aws:s3:::advent-of-code-terraform-state",
+          "arn:aws:s3:::advent-of-code-terraform-state/*"
+        ]
       },
       {
         Effect = "Allow"
