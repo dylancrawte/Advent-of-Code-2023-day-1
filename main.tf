@@ -2,14 +2,14 @@ terraform {
   backend "s3" {
     bucket         = "advent-of-code-terraform-state"
     key            = "advent-of-code/main.tfstate"
-    region         = "us-west-2"
+    region         = "eu-north-1"
     dynamodb_table = "advent-of-code-terraform-lock"
     encrypt        = true
   }
 }
 
 provider "aws" {
-  region = "us-west-2"
+  region = "eu-north-1"
 }
 
 resource "aws_s3_bucket" "my_bucket" {
