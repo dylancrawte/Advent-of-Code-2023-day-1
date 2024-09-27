@@ -15,7 +15,7 @@ resource "aws_s3_bucket" "my_bucket" {
 resource "aws_iam_role" "lambda_exec_role" {
   name = "lambda_exec_role"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17"
+    Version = "2012-10-17"m
     Statement = [
       {
         Action = "sts:AssumeRole"
