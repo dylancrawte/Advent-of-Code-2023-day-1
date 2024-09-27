@@ -5,11 +5,15 @@ terraform {
     region         = "eu-north-1"
     dynamodb_table = "advent-of-code-terraform-lock"
     encrypt        = true
+    access_key     = "secret.AWS_ACCESS_KEY_ID"
+    secret_key     = "secret.AWS_SECRET_ACCESS_KEY"
   }
 }
 
 provider "aws" {
-  region = "eu-north-1"
+  region     = "eu-north-1"
+  access_key = "secret.AWS_ACCESS_KEY_ID"
+  secret_key = "secret.AWS_SECRET_ACCESS_KEY"
 }
 
 resource "aws_s3_bucket" "my_bucket" {
