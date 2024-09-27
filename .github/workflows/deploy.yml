@@ -71,10 +71,6 @@ jobs:
         role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
         role-duration-seconds: 1200
 
-    - name: Display results
-      run: |
-        cat response.json
-
     - name: Configure Git
       run: |
         git config user.name github-actions
