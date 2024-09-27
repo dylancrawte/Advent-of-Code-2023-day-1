@@ -89,10 +89,6 @@ output "day1_lambda_function_name" {
   value = aws_lambda_function.day1_lambda.function_name
 }
 
-output "main_lambda_function_name" {
-  value = aws_lambda_function.main_lambda.function_name
-}
-
 resource "aws_iam_role_policy" "lambda_s3_policy" {
   name = "lambda_s3_policy"
   role = aws_iam_role.lambda_exec_role.id
