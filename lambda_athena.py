@@ -74,11 +74,29 @@ def list_tables(database):
         logger.error(f"Error listing tables: {str(e)}")
         raise
 
-def main():
-    database = 'default'  # or your specific database name
-    s3_output = 's3://advent-of-code-day/'  # your S3 bucket for query results
+def create_database(database_name, s3_output):
+    client = boto3.client('athena')
+    create_db_query = f"CREATE DATABASE IF NOT EXISTS {database_name}"
+    
+    logger.info(f"Creating database: {database_name}")
+    state, query_id = run_athena_query(create_db_query, 'default', s3_output)
+    
+    if state == 'SUCCEEDED':
+        logger.info(f"Database '{database_name}' created successfully")
+        return True
+    else:
+        logger.error(f"Failed to create database '{database_name}'. Query ID: {query_id}")
+        return False
 
-    # Updated create table query for a single column
+def main():
+    database = 'advent_of_code_db'  # New database name
+    s3_output = 's3://advent-of-code-day/query_results/'  # S3 bucket for query results
+
+    # Create the database
+    if not create_database(database, s3_output):
+        return
+
+    # Updated create table query for a single column, mapping to output.txt
     create_table_query = """
     CREATE EXTERNAL TABLE IF NOT EXISTS output_data (
         digit INT
@@ -87,7 +105,7 @@ def main():
     FIELDS TERMINATED BY '\n'
     STORED AS TEXTFILE
     LOCATION 's3://advent-of-code-day/'
-    TBLPROPERTIES ('skip.header.line.count'='0')
+    TBLPROPERTIES ('skip.header.line.count'='0', 'serialization.null.format'='')
     """
 
     logger.info("Creating Athena table...")
