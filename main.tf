@@ -30,7 +30,7 @@ resource "aws_iam_role" "lambda_exec_role" {
 
   managed_policy_arns = [
     "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",  // Add this line
+    "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess",
   ]
 }
 
@@ -58,24 +58,6 @@ resource "aws_lambda_function" "day1_lambda" {
   runtime          = "python3.8"
   filename         = data.archive_file.day1_zip.output_path
   source_code_hash = data.archive_file.day1_zip.output_base64sha256
-
-  environment {
-    variables = {
-      S3_BUCKET     = aws_s3_bucket.my_bucket.bucket
-      SQL_SCRIPT    = local.sql_script
-      ATHENA_DB     = aws_athena_database.advent_database.name
-      ATHENA_OUTPUT = "s3://${aws_s3_bucket.my_bucket.bucket}/athena_results/"
-    }
-  }
-}
-
-resource "aws_lambda_function" "main_lambda" {
-  function_name    = "advent-of-code-2023-main"
-  role             = aws_iam_role.lambda_exec_role.arn
-  handler          = "lambda_athena.lambda_handler"
-  runtime          = "python3.8"
-  filename         = data.archive_file.main_lambda_zip.output_path
-  source_code_hash = data.archive_file.main_lambda_zip.output_base64sha256
 
   environment {
     variables = {
